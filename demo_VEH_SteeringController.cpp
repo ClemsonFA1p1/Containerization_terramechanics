@@ -18,6 +18,7 @@
 // Y pointing to the left.
 //
 // =============================================================================
+#include <chrono>
 
 #include "chrono/utils/ChFilters.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -29,13 +30,12 @@
 #include "chrono_thirdparty/filesystem/path.h"
 #include "chrono_matlab/ChMatlabEngine.h"
 
-//#include "chrono_postprocess/ChGnuPlot.h"
-
 using namespace chrono;
 using namespace chrono::geometry;
 using namespace chrono::vehicle;
 using namespace chrono::vehicle::hmmwv;
-//using namespace postprocess;
+using namespace std::chrono;
+
 
 // =============================================================================
 // Select Path Follower, uncomment to select the pure PID steering controller
@@ -49,19 +49,12 @@ using namespace chrono::vehicle::hmmwv;
 // =============================================================================
 // Problem parameters
 
-//ChMatrixDynamic<double> Result;
-// double ResultX;
-// double ResultY;
-// double ResultZ;
-//ChVector<> ResultX; //works 
-ChMatrixDynamic<> ResultX(1000, 1);
-ChMatrixDynamic<> ResultY(1000, 1);
-ChMatrixDynamic<> ResultZ(1000, 1);
-// ChVector<> ResultY();
-// ChVector<> ResultZ();
- //std::vector<double> ResultX;//works
- //std::vector<> ResultY;
- //std::vector<> ResultZ;
+ChMatrixDynamic<> ResultX(2000, 1);
+ChMatrixDynamic<> ResultY(2000, 1);
+ChMatrixDynamic<> ResultZ(2000, 1);
+ChMatrixDynamic<> ResultX2(2000, 1);
+ChMatrixDynamic<> ResultY2(2000, 1);
+ChMatrixDynamic<> ResultZ2(2000, 1);
 
 // Contact method type
 ChContactMethod contact_method = ChContactMethod::SMC;
@@ -80,7 +73,7 @@ DrivelineTypeWV drive_type = DrivelineTypeWV::RWD;
 SteeringTypeWV steering_type = SteeringTypeWV::PITMAN_ARM;
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
-VisualizationType chassis_vis_type = VisualizationType::MESH;
+VisualizationType chassis_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::MESH;
@@ -115,8 +108,8 @@ double tire_step_size = 1e-3;
 double t_end = 100;
 
 // Render FPS
-//double fps = 60;
-double fps = 1;
+double fps = 60;
+//double fps = 1;
 
 // Debug logging
 bool debug_output = false;
@@ -166,12 +159,12 @@ int main(int argc, char* argv[]) {
     RigidTerrain terrain(my_hmmwv.GetSystem());
 
     MaterialInfo minfo;
-    minfo.mu = 0.8f;
-    minfo.cr = 0.01f;
+    minfo.mu = 0.3f;
+    minfo.cr = 0.15f;
     minfo.Y = 2e7f;
     auto patch_mat = minfo.CreateMaterial(contact_method);
     //std::cout << patch_mat->SetFriction();
-    //patch_mat->SetFriction(0.9f);
+    //patch_mat->SetFriction(1.5f);
     auto patch = terrain.AddPatch(patch_mat, CSYSNORM, terrainLength, terrainWidth);
     patch->SetColor(ChColor(1, 1, 1));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
@@ -184,6 +177,16 @@ int main(int argc, char* argv[]) {
 
     // From data file
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
+
+    ChVectorDynamic<> x(25);
+    ChVectorDynamic<> y(25);
+    double delta = 1.0 / 25;
+
+    for (int i = 0; i < 25; i++) {
+        ChVector<> pos = path->eval(delta * i);
+        x(i) = pos.x();
+        y(i) = pos.y();
+    }
 
     // Parameterized ISO double lane change (to left)
     //auto path = DoubleLaneChangePath(ChVector<>(-125, -125, 0.1), 13.5, 4.0, 11.0, 50.0, true);
@@ -309,6 +312,8 @@ int main(int argc, char* argv[]) {
     int j = 0;
 
     my_hmmwv.GetVehicle().EnableRealtime(true);
+
+    auto start = high_resolution_clock::now();
     while (vis->Run()) {
         // Extract system state
         double time = my_hmmwv.GetSystem()->GetChTime();
@@ -320,9 +325,12 @@ int main(int argc, char* argv[]) {
         double lat_acc_driver = lat_acc_driver_filter.Add(acc_driver.y());
 
         // End simulation
-        if (time >= t_end)
-            break;
+        //if (time >= t_end)
+          // break;
+        
 
+        if (j == 800)
+           break;
         // Driver inputs
         DriverInputs driver_inputs = driver.GetInputs();
 
@@ -338,7 +346,7 @@ int main(int argc, char* argv[]) {
         auto Result_pos = my_hmmwv.GetChassis()->GetMarkers()[0]->GetAbsCoord().pos;;
         //std::cout <<  << std::endl;
 
-        if((i % 100)==0 and j<1000){
+        if((i % 100)==0 and j<800){
             
             ResultX(j)= Result_pos.x();
             ResultY(j)= Result_pos.y();
@@ -395,10 +403,199 @@ int main(int argc, char* argv[]) {
     }
 
 
-   
+/*
+    // Create the terrain
+    RigidTerrain terrain2(my_hmmwv.GetSystem());
 
-           //export LD_LIBRARY_PATH=/home/sanskrj/Downloads/Matlab_r2022b/bin/glnxa64:/home/sanskrj/Downloads/Matlab_r2022b/sys/os/glnxa64:$LD_LIBRARY_PATH
-        //export PATH=/home/sanskrj/Downloads/Matlab_r2022b/bin:$PATH
+    MaterialInfo minfo2;
+    minfo2.mu = 1.5f;
+    minfo2.cr = 0.01f;
+    minfo2.Y = 2e7f;
+    auto patch_mat2 = minfo2.CreateMaterial(contact_method);
+    //std::cout << patch_mat->SetFriction();
+    //patch_mat->SetFriction(1.5f);
+    auto patch2 = terrain2.AddPatch(patch_mat2, CSYSNORM, terrainLength, terrainWidth);
+    patch2->SetColor(ChColor(1, 1, 1));
+    patch2->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
+
+    terrain2.Initialize();
+
+    auto vis2 = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis2->AttachVehicle(&my_hmmwv.GetVehicle());
+
+#ifdef USE_PID
+    vis2->SetWindowTitle("Steering PID Controller Demo");
+#endif
+#ifdef USE_XT
+    vis2->SetWindowTitle("Steering XT Controller Demo");
+#endif
+#ifdef USE_SR
+    vis2->SetWindowTitle("Steering SR Controller Demo");
+#endif
+    vis2->SetHUDLocation(500, 20);
+    vis2->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis2->Initialize();
+    vis2->AddSkyBox();
+    vis2->AddLogo();
+    vis2->AddLight(ChVector<>(-150, -150, 200), 300, ChColor(0.7f, 0.7f, 0.7f));
+    vis2->AddLight(ChVector<>(-150, +150, 200), 300, ChColor(0.7f, 0.7f, 0.7f));
+    vis2->AddLight(ChVector<>(+150, -150, 200), 300, ChColor(0.7f, 0.7f, 0.7f));
+    vis2->AddLight(ChVector<>(+150, +150, 200), 300, ChColor(0.7f, 0.7f, 0.7f));
+
+    // Visualization of controller points (sentinel & target)
+    irr::scene::IMeshSceneNode* ballS2 = vis2->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT2 = vis2->GetSceneManager()->addSphereSceneNode(0.1f);
+    ballS2->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+    ballT2->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
+
+    // -----------------
+    // Initialize output
+    // -----------------
+    /*
+    state_output = state_output || povray_output;
+
+    if (state_output) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
+            std::cout << "Error creating directory " << out_dir << std::endl;
+            return 1;
+        }
+    }
+
+    if (povray_output) {
+        if (!filesystem::create_directory(filesystem::path(pov_dir))) {
+            std::cout << "Error creating directory " << pov_dir << std::endl;
+            return 1;
+        }
+        driver.ExportPathPovray(out_dir);
+    }
+
+    utils::CSV_writer csv("\t");
+    csv.stream().setf(std::ios::scientific | std::ios::showpos);
+    csv.stream().precision(6);*/
+
+    /*utils::ChRunningAverage fwd_acc_GC_filter(filter_window_size);
+    utils::ChRunningAverage lat_acc_GC_filter(filter_window_size);
+
+    utils::ChRunningAverage fwd_acc_driver_filter(filter_window_size);
+    utils::ChRunningAverage lat_acc_driver_filter(filter_window_size);*/
+
+    // ---------------
+    // Simulation loop
+    // ---------------
+
+    // Driver location in vehicle local frame
+   //ChVector<> driver_pos = my_hmmwv.GetChassis()->GetLocalDriverCoordsys().pos;
+   
+    /*// Number of simulation steps between miscellaneous events
+    double render_step_size = 1 / fps;
+    int render_steps = (int)std::ceil(render_step_size / step_size);
+    double debug_step_size = 1 / debug_fps;
+    int debug_steps = (int)std::ceil(debug_step_size / step_size);*/
+
+    /*// Initialize simulation frame counter and simulation time
+    int sim_frame = 0;
+    int render_frame = 0;
+    int i = 0;
+    int j = 0;*/
+   /*
+    my_hmmwv.GetVehicle().EnableRealtime(true);
+
+    int k=0;
+    int h =0;
+    while (vis2->Run()) {
+        // Extract system state
+        double time = my_hmmwv.GetSystem()->GetChTime();
+        ChVector<> acc_CG = my_hmmwv.GetVehicle().GetChassisBody()->GetPos_dtdt();
+        ChVector<> acc_driver = my_hmmwv.GetVehicle().GetPointAcceleration(driver_pos);
+        double fwd_acc_CG = fwd_acc_GC_filter.Add(acc_CG.x());
+        double lat_acc_CG = lat_acc_GC_filter.Add(acc_CG.y());
+        double fwd_acc_driver = fwd_acc_driver_filter.Add(acc_driver.x());
+        double lat_acc_driver = lat_acc_driver_filter.Add(acc_driver.y());
+
+        // End simulation
+        //if (time >= t_end)
+          // break;
+        
+
+        if (k == 800)
+           break;
+        // Driver inputs
+        DriverInputs driver_inputs = driver.GetInputs();
+
+
+        // Update sentinel and target location markers for the path-follower controller.
+        const ChVector<>& pS2 = driver.GetSteeringController().GetSentinelLocation();
+        const ChVector<>& pT2 = driver.GetSteeringController().GetTargetLocation();
+        ballS2->setPosition(irr::core::vector3df((irr::f32)pS2.x(), (irr::f32)pS2.y(), (irr::f32)pS2.z()));
+        ballT2->setPosition(irr::core::vector3df((irr::f32)pT2.x(), (irr::f32)pT2.y(), (irr::f32)pT2.z()));
+        
+
+    
+        auto Result_pos2 = my_hmmwv.GetChassis()->GetMarkers()[0]->GetAbsCoord().pos;;
+        std::cout << k << std::endl;
+
+        if((h % 100)==0 and k<800){
+            
+            ResultX2(k)= Result_pos2.x();
+            ResultY2(k)= Result_pos2.y();
+            ResultZ2(k)= Result_pos2.z();
+            k+=1;
+        }
+        h+=1;
+        
+        vis2->BeginScene();
+        vis2->Render();
+        vis2->EndScene();
+
+        // Output POV-Ray data
+        if (sim_frame % render_steps == 0) {
+            if (povray_output) {
+                char filename[100];
+                sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
+                utils::WriteVisualizationAssets(my_hmmwv.GetSystem(), filename);
+            }
+
+            if (state_output) {
+                csv << time << driver_inputs.m_steering << driver_inputs.m_throttle << driver_inputs.m_braking;
+                csv << my_hmmwv.GetVehicle().GetSpeed();
+                csv << acc_CG.x() << fwd_acc_CG << acc_CG.y() << lat_acc_CG;
+                csv << acc_driver.x() << fwd_acc_driver << acc_driver.y() << lat_acc_driver;
+                csv << std::endl;
+            }
+
+            render_frame++;
+        }
+
+        // Debug logging
+        if (debug_output && sim_frame % debug_steps == 0) {
+            GetLog() << "driver acceleration:  " << acc_driver.x() << "  " << acc_driver.y() << "  " << acc_driver.z()
+                     << "\n";
+            GetLog() << "CG acceleration:      " << acc_CG.x() << "  " << acc_CG.y() << "  " << acc_CG.z() << "\n";
+            GetLog() << "\n";
+        }
+
+        // Update modules (process inputs from other modules)
+        driver.Synchronize(time);
+        terrain2.Synchronize(time);
+        my_hmmwv.Synchronize(time, driver_inputs, terrain2);
+        vis2->Synchronize("Double lane change", driver_inputs);
+
+        // Advance simulation for one timestep for all modules
+        driver.Advance(step_size);
+        terrain2.Advance(step_size);
+        my_hmmwv.Advance(step_size);
+        vis2->Advance(step_size);
+
+        // Increment simulation frame number
+        sim_frame++;
+    }  
+    
+    */
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    std::cout << duration.count() << std:: endl;
+    // export LD_LIBRARY_PATH=/home/sanskrj/Downloads/Matlab_r2022b/bin/glnxa64:/home/sanskrj/Downloads/Matlab_r2022b/sys/os/glnxa64:$LD_LIBRARY_PATH 
+    //export PATH=/home/sanskrj/Downloads/Matlab_r2022b/bin:$PATH
     try{
         GetLog() << "PERFORM TESTS OF MATLAB<->CHRONO INTERACTION\n\n";
         GetLog() << "(please wait few seconds: Matlab engine must be loaded)\n\n";
@@ -419,22 +616,41 @@ int main(int argc, char* argv[]) {
         // pass a Chrono matrix/vector to Matlab
         //
 
-        GetLog() << "- Send Vector data of Sentinal to Matlab for operations and plotting...\n\n";
-    
+       
+        //GetLog() << "Something done ! ... \n\n";
         matlab_engine.PutVariable(ResultX, "ResultX");
-      
         matlab_engine.PutVariable(ResultY, "ResultY");
-      
         matlab_engine.PutVariable(ResultZ, "ResultZ");
-       // GetLog() << "Something done ! ... \n\n";
-        matlab_engine.Eval("figure; plot(ResultX, ResultY, 'ok');");
+        matlab_engine.PutVariable(x, "x");
+        matlab_engine.PutVariable(y, "y");
+
+        /*
+        matlab_engine.PutVariable(ResultX2, "ResultX2");
+        matlab_engine.PutVariable(ResultY2, "ResultY2");
+        matlab_engine.PutVariable(ResultZ2, "ResultZ2");
+        */
+        //GetLog() << "Something done ! ... \n\n";
+        matlab_engine.Eval("figure;f = gcf; grid on; axis equal; plot(x, y, 'r');");
+        matlab_engine.Eval(" hold on; plot(ResultX, ResultY, 'go');");
+
+        //matlab_engine.Eval("hold on; plot(ResultX2, ResultY2, 'g');");
+
+
+        matlab_engine.Eval("legend ('Ground truth trajectory', 'Actual trajectory followed');");
+        matlab_engine.Eval("xlabel ('Position X [m]');");
+        matlab_engine.Eval("ylabel ('Position Y [m]');");
+        matlab_engine.Eval("title ('Trajectory Followed by vehicle');");
+        matlab_engine.Eval("exportgraphics(f, 'Trajectory_final_0.3.png', 'Resolution',300);");
+
+         
+       
         //GetLog() << "Past Evaluations done ! ... \n\n";
 
         // Wait some seconds before closing all
 
         matlab_engine.Eval("pause(60)");
 
-        GetLog() << "Everything done ! ... \n\n";
+        //GetLog() << "Everything done ! ... \n\n";
 
     }catch (...) {
         GetLog() << "NOTHING done ! ... \n\n";  // Print error on console, if Matlab did not start.
