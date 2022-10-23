@@ -434,7 +434,7 @@ int main(int argc, char* argv[]) {
 
        
         matlab_engine.Eval("figure;f = gcf; grid on; ylim([-150 100]); xlim([-150 100]); plot(x, y, 'r','LineWidth',3);");
-        matlab_engine.Eval(" hold on; plot(ResultX, ResultY, 'go');");
+        matlab_engine.Eval(" hold on; plot(Pos_X_15, Pos_Y_15, 'go');");
 
         //matlab_engine.Eval("hold on; plot(ResultX2, ResultY2, 'g');");
 
