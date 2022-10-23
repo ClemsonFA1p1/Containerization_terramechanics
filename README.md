@@ -22,6 +22,8 @@ To run this repository following settings must be completed :
 `export LD_LIBRARY_PATH=<matlabroot>/bin/glnxa64:<matlabroot>/sys/os/glnxa64:$LD_LIBRARY_PATH`
 
 `export PATH=<matlabroot>/bin:$PATH`
+
+3. Update the Chrono_matlab engine codes for -automation command (its specific to windows OS)
   
   
 Place the demo_VEH_SteeringController.cpp and CMakelist in chrono/src/demos/vehicle directory 
