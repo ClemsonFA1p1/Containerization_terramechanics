@@ -49,12 +49,10 @@ using namespace std::chrono;
 // =============================================================================
 // Problem parameters
 
-ChMatrixDynamic<> ResultX(2000, 1);
-ChMatrixDynamic<> ResultY(2000, 1);
-ChMatrixDynamic<> ResultZ(2000, 1);
-ChMatrixDynamic<> ResultX2(2000, 1);
-ChMatrixDynamic<> ResultY2(2000, 1);
-ChMatrixDynamic<> ResultZ2(2000, 1);
+ChMatrixDynamic<> Pos_X_15(2000, 1);
+ChMatrixDynamic<> Pos_Y_15(2000, 1);
+ChMatrixDynamic<> Pos_Z_15(2000, 1);
+
 
 // Contact method type
 ChContactMethod contact_method = ChContactMethod::SMC;
@@ -159,12 +157,11 @@ int main(int argc, char* argv[]) {
     RigidTerrain terrain(my_hmmwv.GetSystem());
 
     MaterialInfo minfo;
-    minfo.mu = 0.3f;
+    minfo.mu = 1.5f;
     minfo.cr = 0.15f;
     minfo.Y = 2e7f;
     auto patch_mat = minfo.CreateMaterial(contact_method);
-    //std::cout << patch_mat->SetFriction();
-    //patch_mat->SetFriction(1.5f);
+
     auto patch = terrain.AddPatch(patch_mat, CSYSNORM, terrainLength, terrainWidth);
     patch->SetColor(ChColor(1, 1, 1));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
@@ -348,9 +345,9 @@ int main(int argc, char* argv[]) {
 
         if((i % 100)==0 and j<800){
             
-            ResultX(j)= Result_pos.x();
-            ResultY(j)= Result_pos.y();
-            ResultZ(j)= Result_pos.z();
+            Pos_X_15(j)= Result_pos.x();
+            Pos_Y_15(j)= Result_pos.y();
+            Pos_Z_15(j)= Result_pos.z();
             j+=1;
         }
         i+=1;
@@ -429,19 +426,14 @@ int main(int argc, char* argv[]) {
 
        
         //GetLog() << "Something done ! ... \n\n";
-        matlab_engine.PutVariable(ResultX, "ResultX");
-        matlab_engine.PutVariable(ResultY, "ResultY");
-        matlab_engine.PutVariable(ResultZ, "ResultZ");
+        matlab_engine.PutVariable(Pos_X_15, "Pos_X_15");
+        matlab_engine.PutVariable(Pos_Y_15, "Pos_Y_15");
+        matlab_engine.PutVariable(Pos_Z_15, "Pos_Z_15");
         matlab_engine.PutVariable(x, "x");
         matlab_engine.PutVariable(y, "y");
 
-        /*
-        matlab_engine.PutVariable(ResultX2, "ResultX2");
-        matlab_engine.PutVariable(ResultY2, "ResultY2");
-        matlab_engine.PutVariable(ResultZ2, "ResultZ2");
-        */
        
-        matlab_engine.Eval("figure;f = gcf; grid on; axis equal; plot(x, y, 'r');");
+        matlab_engine.Eval("figure;f = gcf; grid on; ylim([-150 100]); xlim([-150 100]); plot(x, y, 'r','LineWidth',3);");
         matlab_engine.Eval(" hold on; plot(ResultX, ResultY, 'go');");
 
         //matlab_engine.Eval("hold on; plot(ResultX2, ResultY2, 'g');");
