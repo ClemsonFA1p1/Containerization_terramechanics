@@ -2,7 +2,9 @@
 Adding Network to Docker :
 
 sudo docker network ls
-sudo docker network create --driver bridge common2 >> o/p d91714e820d6458c09637f9750979741f48bfa13a36755f4c47a02f259c8ea71
+
+sudo docker network create --driver bridge common2
+>> o/p d91714e820d6458c09637f9750979741f48bfa13a36755f4c47a02f259c8ea71
 
 sudo docker run -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --network common2 sanskrj/ubuntu:projchrono_v8
 
