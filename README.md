@@ -1,6 +1,11 @@
 # ProjectChrono_ARMLAB
 
 
+Using the image below, one can run project chrono, pychrono deep reinforcement learning
+Docker Image : https://hub.docker.com/repository/docker/sanskrj/projchrono
+docker pull sanskrj/projchrono:v10
+
+
 To run this repository following settings must be completed :
 1. The build directory of chrono needs to include MATLAB and MATLAB SDK root :
 
