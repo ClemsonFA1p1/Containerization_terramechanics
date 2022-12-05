@@ -5,7 +5,7 @@ Using the image below, one can run project chrono, pychrono deep reinforcement l
 
 Docker Image : https://hub.docker.com/repository/docker/sanskrj/projchrono
 
-docker pull sanskrj/projchrono:v10
+`docker pull sanskrj/projchrono:v10`
 
 
 To run this repository following settings must be completed :
