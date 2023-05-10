@@ -1,4 +1,5 @@
-# ProjectChrono_ARMLAB
+# Containerization Approach for High-Fidelity Terramechanics Simulations
+
 
 
 Using the image below, one can run project chrono, pychrono deep reinforcement learning
